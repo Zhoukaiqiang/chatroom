@@ -40,5 +40,20 @@ form#send-form {
   margin-left: 10px;
 }
 #help {
+  font-size: 12px;
   margin: 1em 0 0 3em;
+}
+
+#room-list {
+  float: right;
+  width: 100px;
+  height: 300px;
+  overflow: auto;
+}
+#room-list div {
+  border-bottom: 1px solid #eee;
+}
+
+#room-list div:hover {
+  background-color: #ddd;
 }

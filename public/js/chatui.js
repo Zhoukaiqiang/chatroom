@@ -1,23 +1,24 @@
-const divEscapedContentElement = (message) => {
+const escapedContent = (message) => {
   return $("<div></div>").text(message);
 };
 
-const divSystemContentElement = (message) => {
+const systemContent = (message) => {
   return $("<div></div>").html(`<i>${message}</i>`);
 };
 
-const processUserInput = (chatApp, socket) => {
+const processUserInput = (chatApp) => {
   const message = $("#send-message").val();
+  if (!message || !message.length) return
   let systemMessage;
   if (message.charAt(0) === "/") {
     systemMessage = chatApp.processCommand(message);
     if (systemMessage) {
-      $("#message").append(divSystemContentElement(systemMessage));
+      $("#messages").append(systemContent(systemMessage));
     }
   } else {
     chatApp.sendMessage($("#room").text(), message);
-    $("#message").append(divEscapedContentElement(message));
-    $("#message").scrollTo($("#message").prop("scrollHeight"));
+    $("#messages").append(escapedContent(message));
+    $("#messages").scrollTop($("#messages").prop('scrollHeight'));
   }
-  $("#send-message").val();
+  $("#send-message").val('');
 };

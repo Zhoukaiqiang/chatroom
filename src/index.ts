@@ -1,11 +1,13 @@
 import express from "express";
-const mime = require("mime");
-import path from "path";
-import fs from "fs";
+import http from 'http'
+import io from './chatserver'
+
+
 const PORT = 3001;
-const cache = {};
 
 const app: express.Application = express();
+const server = http.createServer(app)
+io.attach(server)
 
 app.use(express.static("public"));
 
@@ -50,7 +52,7 @@ app.use(send404);
 //   }
 // };
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`TypeScript with Express
   http://localhost:${PORT}/`);
 });

@@ -1,14 +1,14 @@
 {
   "name": "chatroom",
   "version": "1.0.0",
-  "description": "",
+  "description": "A simple chatroom demo",
   "main": "src/index.ts",
   "scripts": {
     "start": "nodemon src/index.ts",
     "format": "prettier --write *.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["Socket.io","聊天室","websocket","express"],
+  "author": "a169kai",
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^4.17.14",

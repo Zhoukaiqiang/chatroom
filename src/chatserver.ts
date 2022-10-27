@@ -1,63 +1,72 @@
-const { Server } = require("socket.io");
+import { Server, Socket } from "socket.io";
 
-let io;
+const io = new Server();
+type name = string;
+type socketId = string;
+type roomName = string;
 let guestNum = 1;
-const nickNames = {};
-const namesUsed = [];
-const currentRoom = {};
+const nickNames: Record<socketId, name> = {};
+const namesUsed: string[] = [];
+const currentRoom: Record<socketId, roomName> = {};
+const rooms: string[] = ["CS50"];
 
-exports.listen = function (server) {
-  io = new Server(server);
+io.on("connection", (socket) => {
+  guestNum = assignGuestName(socket, guestNum);
 
-  io.set("log level", 1);
+  joinRoom(socket, rooms[0]);
+  handleMessageBroadCasting(socket);
 
-  io.on("connection", (socket) => {
-    guestNum = assignGuestName(socket, guestNum, nickNames, namesUsed);
+  handleRename(socket);
 
-    joinRoom(socket, "CS50");
-    handleMessageBroadCasting(socket, nickNames);
+  handleRoomJoining(socket);
 
-    handleNameChangeAttempts(socket, nickNames, namesUsed);
-
-    handleRoomJoining(socket);
-
-    socket.on("rooms", () => {
-      socket.emit("rooms", io.manager.rooms);
-    });
-
-    handleClientDisconnection(socket, nickNames, namesUsed);
+  socket.on("rooms", async () => {
+    const roomss = io.of('/').adapter.rooms
+    console.log(roomss);
+    socket.emit("rooms", rooms);
   });
-};
 
+  handleClientDisconnection(socket);
+});
+
+const getRooms = (socket: Socket) => {
+  const rooms = new Set(socket.rooms);
+  for (const room in currentRoom) {
+    rooms.delete(room);
+  }
+  return Array.from(rooms);
+};
 // 给用户分配名字 Guest1 Guest2
-const assignGuestName = (socket, guestNum, nickNames, namesUsed) => {
-  const name = "Guest" + guestNum;
+const assignGuestName = (socket: Socket, guestNumber: number) => {
+  const name = `Guest${guestNumber}`;
   nickNames[socket.id] = name;
+  namesUsed.push(name);
   socket.emit("nameResult", {
     success: true,
     name,
   });
-  namesUsed.push(name);
-  return guestNum + 1;
+
+  return guestNumber + 1;
 };
 
-const joinRoom = (socket, room) => {
+const joinRoom = (socket: Socket, room: any) => {
   socket.join(room);
   currentRoom[socket.id] = room;
   socket.emit("joinResult", { room });
   socket.broadcast.to(room).emit("message", {
     text: `${nickNames[socket.id]} has joined ${room}.`,
   });
-  const usersInRoom = io.clients(room);
+  // const usersInRoom = io.clients(room);
+  const usersInRoom: any[] = [];
   if (usersInRoom.length > 1) {
     let usersInRoomSummary = `Users currently in ${room} :`;
-
+    console.log(socket.rooms);
     for (const index in usersInRoom) {
       const userSocketId = usersInRoom[index].id;
       if (userSocketId !== socket.id) {
-        if (index > 0) {
-          usersInRoomSummary += ", ";
-        }
+        // if (index > 0) {
+        //   usersInRoomSummary += ", ";
+        // }
         usersInRoomSummary += nickNames[userSocketId];
       }
     }
@@ -66,11 +75,9 @@ const joinRoom = (socket, room) => {
   }
 };
 
-/**
- * 处理用户改名
- */
-const handleNameChangeAttempts = (socket, nickNames, namesUsed) => {
-  socket.on("nameAttempt", (name) => {
+// 处理用户改名
+const handleRename = (socket: Socket) => {
+  socket.on("rename", (name) => {
     if (name.includes("Guest")) {
       socket.emit("nameResult", {
         success: false,
@@ -83,15 +90,14 @@ const handleNameChangeAttempts = (socket, nickNames, namesUsed) => {
           message: "That name is already in use.",
         });
       } else {
-        const previousNameIndex = nickNames.findIndex((n) => socket.id === n);
-        const previousName = nickNames[previousNameIndex];
+        const previousName = nickNames[socket.id];
+        delete nickNames[socket.id];
+
         namesUsed.push(name);
         nickNames[socket.id] = name;
-        delete namesUsed[previousNameIndex];
 
         socket.emit("nameResult", {
           success: true,
-          message: "Success",
           name,
         });
 
@@ -103,7 +109,7 @@ const handleNameChangeAttempts = (socket, nickNames, namesUsed) => {
   });
 };
 
-const handleMessageBroadCasting = (socket, nickNames) => {
+const handleMessageBroadCasting = (socket: Socket) => {
   socket.on("message", (message) => {
     socket.broadcast.to(message.room).emit("message", {
       text: `${nickNames[socket.id]} : ${message.text}`,
@@ -111,17 +117,26 @@ const handleMessageBroadCasting = (socket, nickNames) => {
   });
 };
 
-const handleRoomJoining = (socket) => {
+const handleRoomJoining = (socket: Socket) => {
   socket.on("join", (room) => {
     socket.leave(currentRoom[socket.id]);
     joinRoom(socket, room.newRoom);
   });
 };
 
-const handleClientDisconnection = (socket) => {
+const handleClientDisconnection = (socket: Socket) => {
   socket.on("disconnect", () => {
-    const nameIndex = namesUsed.indexOf(nickNames[socket.id]);
+    const username: string = nickNames[socket.id];
+    const room = currentRoom[socket.id];
+    const nameIndex = namesUsed.findIndex((u) => u === username);
+
     delete namesUsed[nameIndex];
     delete nickNames[socket.id];
+
+    socket.to(room).emit("message", {
+      text: `user ${username} has left the room.`,
+    });
   });
 };
+
+export default io;

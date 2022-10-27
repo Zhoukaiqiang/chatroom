@@ -30,10 +30,10 @@ class Chat {
         const room = words.join(" ");
         this.changeRoom(room);
         break;
-      case "nick":
+      case "rename":
         words.shift();
         const name = words.join(" ");
-        this.socket.emit("nameAttempt", name);
+        this.socket.emit("rename", name);
         break;
       default:
         message = "Unrecognize command.";
