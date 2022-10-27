@@ -1,0 +1,44 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", sans-serif;
+}
+a {
+  color: #00b7ff;
+}
+#content {
+  width: 800px;
+  margin: auto;
+}
+#room {
+  background-color: #ddd;
+  margin-bottom: 1em;
+}
+
+#messages {
+  width: 690px;
+  height: 300px;
+  overflow: auto;
+  background-color: #eee;
+  margin-bottom: 1em;
+  margin-right: 10px;
+}
+
+form#send-form {
+  height: 30px;
+  display: flex;
+  width: 690px;
+}
+#send-message {
+  flex-grow: 1;
+}
+#send-button {
+  margin-left: 10px;
+}
+#help {
+  margin: 1em 0 0 3em;
+}
