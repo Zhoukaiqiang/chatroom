@@ -85,17 +85,11 @@
         setInterval(() => {
           socket.emit("rooms");
         }, 1000);
-        // const form = document.getElementById("send-form");
+
         $("#send-form").submit(function () {
           processUserInput(chatApp);
           return false;
         });
-        // form.addEventListener("submit", function (e) {
-        //   e.preventDefault();
-        //   if ($input.val()) {
-        //     processUserInput(chatApp);
-        //   }
-        // });
       });
     </script>
   </body>

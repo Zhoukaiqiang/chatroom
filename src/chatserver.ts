@@ -8,12 +8,13 @@ let guestNum = 1;
 const nickNames: Record<socketId, name> = {};
 const namesUsed: string[] = [];
 const currentRoom: Record<socketId, roomName> = {};
-const rooms: string[] = ["CS50"];
+// const rooms: string[] = ["CS50"];
 
 io.on("connection", (socket) => {
   guestNum = assignGuestName(socket, guestNum);
 
-  joinRoom(socket, rooms[0]);
+  joinRoom(socket, "CS50");
+
   handleMessageBroadCasting(socket);
 
   handleRename(socket);
@@ -21,22 +22,20 @@ io.on("connection", (socket) => {
   handleRoomJoining(socket);
 
   socket.on("rooms", async () => {
-    const roomss = io.of('/').adapter.rooms
-    console.log(roomss);
+    let rooms = JSON.parse(
+      JSON.stringify(Array.from(io.of("/").adapter.rooms.keys()))
+    );
+    const socketIds = Object.keys(nickNames);
+    for (const socketid of socketIds) {
+      rooms = rooms.filter((n: string) => n !== socketid);
+    }
     socket.emit("rooms", rooms);
   });
 
   handleClientDisconnection(socket);
 });
 
-const getRooms = (socket: Socket) => {
-  const rooms = new Set(socket.rooms);
-  for (const room in currentRoom) {
-    rooms.delete(room);
-  }
-  return Array.from(rooms);
-};
-// 给用户分配名字 Guest1 Guest2
+// assign name to user Guest1 Guest2
 const assignGuestName = (socket: Socket, guestNumber: number) => {
   const name = `Guest${guestNumber}`;
   nickNames[socket.id] = name;
@@ -49,26 +48,20 @@ const assignGuestName = (socket: Socket, guestNumber: number) => {
   return guestNumber + 1;
 };
 
-const joinRoom = (socket: Socket, room: any) => {
-  socket.join(room);
+const joinRoom = async (socket: Socket, room: string) => {
+  await socket.join(room);
   currentRoom[socket.id] = room;
   socket.emit("joinResult", { room });
   socket.broadcast.to(room).emit("message", {
     text: `${nickNames[socket.id]} has joined ${room}.`,
   });
-  // const usersInRoom = io.clients(room);
-  const usersInRoom: any[] = [];
-  if (usersInRoom.length > 1) {
-    let usersInRoomSummary = `Users currently in ${room} :`;
-    console.log(socket.rooms);
-    for (const index in usersInRoom) {
-      const userSocketId = usersInRoom[index].id;
-      if (userSocketId !== socket.id) {
-        // if (index > 0) {
-        //   usersInRoomSummary += ", ";
-        // }
-        usersInRoomSummary += nickNames[userSocketId];
-      }
+  const usersInRoom = io.of("/").adapter.rooms.get(room);
+  if (usersInRoom && usersInRoom.size > 1) {
+    let usersInRoomSummary = `Users currently in ${room}: `;
+    for (const socketId of usersInRoom) {
+      // except self
+      if (socketId === socket.id) continue;
+      usersInRoomSummary += `${nickNames[socketId]} `;
     }
     usersInRoomSummary += ".";
     socket.emit("message", { text: usersInRoomSummary });
@@ -118,8 +111,8 @@ const handleMessageBroadCasting = (socket: Socket) => {
 };
 
 const handleRoomJoining = (socket: Socket) => {
-  socket.on("join", (room) => {
-    socket.leave(currentRoom[socket.id]);
+  socket.on("join", async (room) => {
+    await socket.leave(currentRoom[socket.id]);
     joinRoom(socket, room.newRoom);
   });
 };
