@@ -53,6 +53,5 @@ app.use(send404);
 // };
 
 server.listen(PORT, () => {
-  console.log(`TypeScript with Express
-  http://localhost:${PORT}/`);
+  console.log(`[server] start at http://localhost:${PORT}/`);
 });
